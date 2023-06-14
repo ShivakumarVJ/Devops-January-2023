@@ -1,0 +1,131 @@
+1. How to auto remove container when it exits?
+If you want a Docker container to be automatically removed when it exits, you can use the --rm flag when you start the container with the docker run command.
+
+$ docker run --rm -it busybox
+Unable to find image 'busybox:latest' locally
+latest: Pulling from library/busybox
+325d69979d33: Pull complete
+Digest: sha256:560af6915bfc8d7630e50e212e08242d37b63bd5c1ccf9bd4acccf116e262d5b
+Status: Downloaded newer image for busybox:latest
+/ #
+/ # date
+Sat May 20 15:10:35 UTC 2023
+/ # exit
+
+$ docker ps | grep busubox
+2. How to list all dangling images?
+Docker provides a filter that you can use to list all dangling images, which are images not associated with a container. The dangling filter can be used with the docker images command as follows:
+
+$ docker images -f dangling=true
+REPOSITORY         TAG       IMAGE ID       CREATED        SIZE
+<none>             <none>    1cae40d74242   3 months ago   164MB
+<none>             <none>    352663be77bb   3 months ago   164MB
+tony/chatgpt       <none>    a93af8f393ae   3 months ago   164MB
+tony/chatgpt       <none>    a58ea17db453   3 months ago   162MB
+<none>             <none>    4cad54b4717d   3 months ago   162MB
+Here, -f or --filter flag is used to provide a filter for the images command and dangling=true is the filter that specifies you want to see only dangling images.
+
+3. How to remove all dangling images?
+Docker images that are no longer needed can take up a significant amount of disk space. These could be dangling images (unreferenced by any tagged images) or images belonging to containers that have been stopped.
+
+To remove these unused or “temporary” images, you can use Docker’s image pruning command:
+
+$ docker image prune
+
+# To confirm before deleting
+$ docker image prune -a
+WARNING! This will remove all images without at least one container associated to them.
+Are you sure you want to continue? [y/N
+Please note that these commands only remove unused images. If an image is being used by a container (even a stopped one), it won’t be removed.
+
+4. How to check supported env vars in a docker image?
+You can use the following command:
+
+$ docker run nginx env
+HOSTNAME=4f2f4f950342
+HOME=/root
+PKG_RELEASE=1~bullseye
+NGINX_VERSION=1.23.3
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+NJS_VERSION=0.7.9
+PWD=/
+5. How to stop all running containers?
+You can stop all running Docker containers using a combination of docker ps and docker stop commands.
+
+$ docker stop $(docker ps -q)
+docker ps -q: The docker ps command lists all running containers. The -q option makes this command only output the container IDs.
+docker stop: The docker stop command stops one or more containers. You can pass it one or more container IDs to stop those containers.
+$(docker ps -q): This part of the command uses command substitution ($()) to take the output of the docker ps -q command (i.e., the IDs of all running containers) and use it as the argument for the docker stop command.
+6. What’s the difference between docker attach and docker exec?
+docker attach
+Used to attach your terminal's standard input, output, and error (or any combination of the three) to a running container. This is the same as using the -i flag when starting the container with docker run.
+
+When you attach to a container, you’re connecting to the container’s main running process (PID 1), usually the process started in the Dockerfile by the CMD or ENTRYPOINT instructions. If this process exits, the container will stop.
+
+docker exec
+Used to execute a new command in a running container. Unlike docker attach, it doesn't interact with the main container process. Instead, it starts a new process for the command you specify.
+
+The docker exec command is especially useful when you want to run an isolated command in a running container. For example, you might want to inspect files in the container, debug a running application, or check the status of processes. You might run commands like ls, ps, or top with docker exec.
+
+7. What is Docker Swarm in high level?
+It is a container orchestration tool provided by Docker, Inc. It is built into the Docker Engine, making it a convenient option for users who are already using Docker and want to start using an orchestrator.
+
+Docker Swarm allows you to manage multiple Docker hosts, running them as a swarm that acts like a single, virtual host. It offers a way to automate the deployment, scaling, and management of containerized applications across multiple hosts, and it provides high-level APIs to coordinate tasks among them.
+
+Key concepts and features of Docker Swarm include:
+
+Services: The primary unit of deployment in Swarm is the service, which represents a task to be executed on the nodes.
+Nodes: A node is an instance of the Docker engine participating in the swarm. There are two types of nodes: Manager nodes that maintain the swarm and store the swarm state, and worker nodes that execute tasks.
+Load balancing: Docker Swarm includes a DNS element for service discovery, which can distribute requests among services in the swarm, helping to ensure that workloads are properly balanced.
+Scaling: You can scale your services up or down to meet the needs of your application.
+Rolling updates: Docker Swarm supports rolling updates, allowing you to update a service gradually with zero downtime.
+Security: Docker Swarm uses mutual Transport Layer Security (TLS) for authentication, authorization, and encryption of communications between nodes in a swarm.
+8. What kind of storage driver does Docker have?
+Docker uses storage drivers to manage the contents of image layers and the writable container layer. Each storage driver handles the implementation differently, based on the underlying technology.
+
+The Docker Engine provides the following storage drivers on Linux:
+
+
+Pic from docker
+9. What is docker image layer in high level?
+In Docker, an image is made up of a series of layers. Docker uses a Union File System to combine these layers into a single image. Union File Systems allow files and directories of separate file systems, known as branches, to be transparently overlaid, forming a single coherent file system.
+
+When you create a Docker image, each step (represented by a line in your Dockerfile) creates a new layer in the image with just the changes from the previous step. Layers are stacked on top of each other to form the final image.
+
+For example:
+
+FROM ubuntu:18.04
+RUN apt-get update
+RUN apt-get install -y python3
+This Dockerfile would create a Docker image with three layers:
+
+The base layer is the ubuntu:18.04 image.
+The next layer contains the changes made when apt-get update is run. This includes updating the package list.
+The top layer contains the changes made when apt-get install -y python3 is run. This includes installing Python3.
+10. What is container copy-on-write feature?
+Copy-on-write (CoW) is a resource management technique used in Docker, specifically for managing the data of Docker containers and images. It’s a strategy of sharing and copying files for maximum efficiency.
+
+The term “copy-on-write” comes into play when the process inside a container modifies an existing file. While the file appears to be the same as in the lower layer to the container, Docker uses a CoW strategy to make a copy of the file from the underlying read-only layer to the container’s writable layer. Any changes are then written to this copy of the file in the writable layer, leaving the underlying file in the read-only layer untouched.
+
+For example:
+
+# Pull an Ubuntu image
+docker pull ubuntu
+
+# Start a container from the image
+docker run -it ubuntu bash
+
+# Inside the container, view the /etc/hosts file
+cat /etc/hosts
+
+# Now modify the /etc/hosts file
+echo "127.0.0.1 mydomain.com" >> /etc/hosts
+
+# View the modified /etc/hosts file
+cat /etc/hosts
+
+# Exit the container
+exit
+In this example, when we modified /etc/hosts, Docker used the CoW strategy to make a copy of the file in the container's writable layer, and our changes went into that copy, not the original file in the read-only layer.
+
+If you start a new container from the same ubuntu image and look at the /etc/hosts file, you'll see that it's in its original state. This demonstrates that changes in one container do not affect the underlying image or other containers based on the same image.
